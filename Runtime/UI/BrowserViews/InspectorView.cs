@@ -39,7 +39,7 @@ namespace ModIO.UI
                     if(this.m_modId != ModProfile.NULL_ID)
                     {
                         // profile
-                        ModProfileRequestManager.instance.RequestModProfile(this.m_modId,
+                        ModManager.GetModProfile(this.m_modId,
                         (p) =>
                         {
                             if(this != null

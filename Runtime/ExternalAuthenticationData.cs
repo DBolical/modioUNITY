@@ -5,8 +5,8 @@ namespace ModIO
     /// <summary>Data for an external authentication ticket.</summary>
     public struct ExternalAuthenticationData
     {
-        /// <summary>Provider of the ticket.</summary>
-        public ExternalAuthenticationProvider provider;
+        /// <summary>Portal that the auth data is provided by.</summary>
+        public UserPortal portal;
 
         /// <summary>Base64 encoded ticket value.</summary>
         public string ticket;
@@ -20,6 +20,18 @@ namespace ModIO
         {
             public const string NONCE = "oculusRiftNonce";
             public const string USER_ID = "oculusRiftId";
+        }
+
+        // ---------[ Obsolete ]---------
+        /// <summary>[Obsolete] Provider of the ticket.</summary>
+        [System.Obsolete("Use ExternalAuthenticationData.portal instead.")]
+        public ExternalAuthenticationProvider provider
+        {
+            get { return (ExternalAuthenticationProvider)this.portal; }
+            set
+            {
+                this.portal = ExternalAuthenticationProviderEnum.ToUserPortalEnum(value);
+            }
         }
     }
 }

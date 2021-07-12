@@ -76,15 +76,15 @@ namespace ModIO.UI
 
                 string urlLoginPostfix = string.Empty;
 
-                switch(LocalUser.ExternalAuthentication.provider)
+                switch(LocalUser.ExternalAuthentication.portal)
                 {
-                    case ExternalAuthenticationProvider.Steam:
+                    case UserPortal.Steam:
                     {
                         urlLoginPostfix = "?ref=steam";
                     }
                     break;
 
-                    case ExternalAuthenticationProvider.GOG:
+                    case UserPortal.GOG:
                     {
                         urlLoginPostfix = "?ref=gog";
                     }

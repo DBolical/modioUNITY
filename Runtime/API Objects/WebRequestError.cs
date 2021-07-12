@@ -206,7 +206,7 @@ namespace ModIO
                         }
                         catch(System.Exception e)
                         {
-                            Debug.LogWarning("[mod.io] Eror parsing error object from repsonse:\n"
+                            Debug.LogWarning("[mod.io] Error parsing error object from response:\n"
                                              + e.Message);
 
                         }

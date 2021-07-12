@@ -69,7 +69,7 @@ namespace ModIO.UI
                 }
                 else
                 {
-                    ModProfileRequestManager.instance.RequestModProfile(modId, this.SetModProfile, (e) => this.m_modId = ModProfile.NULL_ID);
+                    ModManager.GetModProfile(modId, this.SetModProfile, (e) => this.m_modId = ModProfile.NULL_ID);
                 }
             }
         }

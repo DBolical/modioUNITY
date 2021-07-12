@@ -5787,7 +5787,6 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 224584930803032362}
-  - component: {fileID: 114864721409195052}
   - component: {fileID: 114067277964644984}
   m_Layer: 5
   m_Name: Request Managers
@@ -7548,6 +7547,7 @@ MonoBehaviour:
   excludeDownloadsFromLogs: 1
   clearCacheOnDisable: 1
   storeIfSubscribed: 1
+  guestAvatar: {fileID: 0}
 --- !u!114 &114068050934437360
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -22215,18 +22215,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a02ed2f91085d4e7ab6f03a27679043f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &114864721409195052
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1872244221150394}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4fcab1d2f078e4681b93aa3b35136b36, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  minimumFetchSize: 100
 --- !u!114 &114869131445312762
 MonoBehaviour:
   m_ObjectHideFlags: 1

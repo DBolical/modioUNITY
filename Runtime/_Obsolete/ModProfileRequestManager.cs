@@ -4,7 +4,8 @@ using UnityEngine;
 
 namespace ModIO.UI
 {
-    /// <summary>Manages requests made for ModProfiles.</summary>
+    /// <summary>[Obsolete] Manages requests made for ModProfiles.</summary>
+    [System.Obsolete("Functionality now available through ModManager.GetRangeOfModProfiles()")]
     public class ModProfileRequestManager : MonoBehaviour
     {
         // ---------[ SINGLETON ]---------

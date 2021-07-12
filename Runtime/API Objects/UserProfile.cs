@@ -46,7 +46,7 @@ namespace ModIO
         public string profileURL;
 
         /// <summary>Display name of the user for the provided platform.</summary>
-        [JsonProperty("username_platform")]
+        [JsonProperty("display_name_portal")]
         public string usernamePlatform;
     }
 }

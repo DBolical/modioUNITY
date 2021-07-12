@@ -522,22 +522,21 @@ namespace ModIO.UI
             if(this.storeIfSubscribed
                && addedSubscriptions.Count > 0)
             {
-                ModProfileRequestManager.instance.RequestModProfiles(addedSubscriptions,
-                (modProfiles) =>
+                ModManager.GetModProfiles(addedSubscriptions,
+                (ModProfile[] modProfiles) =>
                 {
-                    if(this == null || !this.isActiveAndEnabled || modProfiles == null) { return; }
+                    if (this == null || !this.isActiveAndEnabled || modProfiles == null) { return; }
 
                     IList<int> subbedIds = LocalUser.SubscribedModIds;
 
-                    foreach(ModProfile profile in modProfiles)
+                    foreach (ModProfile profile in modProfiles)
                     {
-                        if(profile != null && subbedIds.Contains(profile.id))
+                        if (profile != null && subbedIds.Contains(profile.id))
                         {
                             StoreModImages(profile);
                         }
                     }
-                },
-                null);
+                }, null);
             }
         }
 

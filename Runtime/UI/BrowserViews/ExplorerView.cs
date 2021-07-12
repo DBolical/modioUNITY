@@ -184,9 +184,6 @@ namespace ModIO.UI
             }
         }
 
-        /// <summary>Accessor for the ModProfileRequestManager instance.</summary>
-        private ModProfileRequestManager profileManager { get { return ModProfileRequestManager.instance; } }
-
         // --- IBrowserView Implementation ---
         /// <summary>Canvas Group.</summary>
         public CanvasGroup canvasGroup
@@ -313,7 +310,7 @@ namespace ModIO.UI
             };
             this.m_modPage = filteredPage;
 
-            ModProfileRequestManager.instance.FetchModProfilePage(this.m_requestFilter, pageOffset, pageSize,
+            ModManager.GetRangeOfModProfiles(this.m_requestFilter, pageOffset, pageSize,
             (page) =>
             {
                 if(this != null
@@ -391,7 +388,7 @@ namespace ModIO.UI
             this.m_transitionPage = transitionPlaceholder;
             this.UpdateTransitionPageDisplay();
 
-            ModProfileRequestManager.instance.FetchModProfilePage(this.m_requestFilter, targetPageProfileOffset, pageSize,
+            ModManager.GetRangeOfModProfiles(this.m_requestFilter, targetPageProfileOffset, pageSize,
             (page) =>
             {
                 if(this.m_transitionPage == transitionPlaceholder)

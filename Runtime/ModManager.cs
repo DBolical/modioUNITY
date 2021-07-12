@@ -36,6 +36,9 @@ namespace ModIO
         /// <summary>Data that needs to be stored across sessions.</summary>
         private static PersistentData m_data;
 
+        /// <summary>Minimum mod profile count to request from the API.</summary>
+        public static int minimumFetchSize = APIPaginationParameters.LIMIT_MAX;
+
         // ---------[ INITIALIZATION ]---------
         /// <summary>Initializes the ModManager settings.</summary>
         static ModManager()
@@ -60,7 +63,10 @@ namespace ModIO
             });
         }
 
+        #region Managing Mods Locally
+        //-------------------------------------//
         // ---------[ MOD MANAGEMENT ]---------
+        //-------------------------------------//
         /// <summary>Generates the path for a given modfile install directory.</summary>
         public static string GetModInstallDirectory(int modId, int modfileId)
         {
@@ -734,8 +740,7 @@ namespace ModIO
                     {
                         --awaitingModfileUpdates;
 
-                        if(modfile.downloadLocator == null
-                           || modfile.downloadLocator.dateExpires <= ServerTimeStamp.Now)
+                        if(modfile.downloadLocator == null)
                         {
                             badModfiles.Add(modfile);
 
@@ -844,8 +849,12 @@ namespace ModIO
                 onCompleted();
             }
         }
+        #endregion
 
-        // ---------[ GAME PROFILE ]---------
+        #region Game Profile
+        //-------------------------------------//
+        // ---------[ GAME PROFILE ]-----------
+        //-------------------------------------//
         /// <summary>Fetches and caches the Game Profile (if not already cached).</summary>
         public static void GetGameProfile(Action<GameProfile> onSuccess,
                                           Action<WebRequestError> onError)
@@ -872,8 +881,12 @@ namespace ModIO
                 }
             });
         }
+        #endregion
 
-        // ---------[ MOD PROFILES ]---------
+        #region Mod Profiles
+        //-------------------------------------//
+        // ---------[ MOD PROFILES ]-----------
+        //-------------------------------------//
         /// <summary>Fetches a mod profile checking the cache, storing if subscribed.</summary>
         public static void GetModProfile(int modId,
                                          Action<ModProfile> onSuccess,
@@ -1028,7 +1041,90 @@ namespace ModIO
                                                            checkForMissingModsInCache);
         }
 
-        // ---------[ MOD IMAGES ]---------
+        /// <summary>Get a range of mod profiles.</summary>
+        public static void GetRangeOfModProfiles(RequestFilter filter, int resultOffset, int profileCount,
+                                                Action<RequestPage<ModProfile>> onSuccess,
+                                                Action<WebRequestError> onError) {
+            Debug.Assert(minimumFetchSize <= APIPaginationParameters.LIMIT_MAX);
+
+            // early out if onSuccess == null
+            if (onSuccess == null && onError == null) { return; }
+
+            if (profileCount > APIPaginationParameters.LIMIT_MAX) {
+                Debug.LogWarning("[mod.io] FetchModProfilePage has been called with a profileCount"
+                                 + " larger than the APIPaginationParameters.LIMIT_MAX."
+                                 + "\nAs such, results may not be as expected.");
+
+                profileCount = APIPaginationParameters.LIMIT_MAX;
+            }
+
+            // ensure indicies are positive
+            if (resultOffset < 0) { resultOffset = 0; }
+            if (profileCount < 0) { profileCount = 0; }
+
+            // setup request structures
+            List<ModProfile> results = new List<ModProfile>(profileCount);
+
+            // PaginationParameters
+            APIPaginationParameters pagination = new APIPaginationParameters();
+
+            int pageIndex = resultOffset / minimumFetchSize;
+            pagination.offset = pageIndex * minimumFetchSize;
+            pagination.limit = minimumFetchSize;
+
+            APIClient.GetAllMods(filter, pagination,
+            (r01) => {
+                int pageOffset = resultOffset % minimumFetchSize;
+
+                for (int i = pageOffset;
+                    i < r01.items.Length
+                    && i < pageOffset + profileCount;
+                    ++i) {
+                    results.Add(r01.items[i]);
+                }
+
+                if (pageOffset + profileCount > r01.size
+                   && r01.items.Length == r01.size) {
+                    pagination.offset += pagination.limit;
+                    APIClient.GetAllMods(filter, pagination,
+                    (r02) => {
+                        for (int i = 0;
+                            i < r02.items.Length
+                            && i < pageOffset + profileCount - r02.size;
+                            ++i) {
+                            results.Add(r02.items[i]);
+                            OnModsReceived(resultOffset, profileCount, r02.resultTotal,
+                                           results, onSuccess);
+                        }
+                    }, onError);
+                } else {
+                    OnModsReceived(resultOffset, profileCount, r01.resultTotal,
+                                   results, onSuccess);
+                }
+            }, onError);
+        }
+
+        /// <summary>Processes the received mod collection and generates a request page.</summary>
+        private static void OnModsReceived(int resultOffset, int pageSize, int resultTotal,
+                                    List<ModProfile> results,
+                                    Action<RequestPage<ModProfile>> onSuccess) {
+            if (onSuccess == null) { return; }
+
+            RequestPage<ModProfile> page = new RequestPage<ModProfile>() {
+                size = pageSize,
+                resultOffset = resultOffset,
+                resultTotal = resultTotal,
+                items = results.ToArray(),
+            };
+
+            onSuccess.Invoke(page);
+        }
+        #endregion
+
+        #region Mod Images
+        //-------------------------------------//
+        // ---------[ MOD IMAGES ]-------------
+        //-------------------------------------//
         /// <summary>Fetches and caches a Mod Logo (if not already cached).</summary>
         public static void GetModLogo(ModProfile profile, LogoSize size,
                                       Action<Texture2D> onSuccess,
@@ -1150,8 +1246,12 @@ namespace ModIO
             });
         }
 
+        #endregion
 
-        // ---------[ MODFILES ]---------
+        #region Mod Files
+        //-------------------------------------//
+        // -----------[ MODFILES ]--------------
+        //-------------------------------------//
         /// <summary>Fetches and caches a Modfile (if not already cached).</summary>
         public static void GetModfile(int modId, int modfileId,
                                       Action<Modfile> onSuccess,
@@ -1179,8 +1279,12 @@ namespace ModIO
             });
         }
 
+        #endregion
 
-        // ---------[ MOD STATS ]---------
+        #region Mod Statistics
+        //-------------------------------------//
+        // ------------[ MOD STATS ]------------
+        //-------------------------------------//
         /// <summary>Fetches and caches a Mod's Statistics (if not already cached or if expired).</summary>
         public static void GetModStatistics(int modId,
                                             Action<ModStatistics> onSuccess,
@@ -1209,8 +1313,53 @@ namespace ModIO
             });
         }
 
+        #endregion
 
-        // ---------[ USERS ]---------
+        #region User Avatar
+        //-------------------------------------//
+        // --------------[ USERS ]-------------
+        //-------------------------------------//
+        public static void GetAuthenticatedUserProfile(Action<UserProfile> onSuccess,
+                                                       Action<WebRequestError> onError)
+        {
+            if (LocalUser.Profile == null
+               && LocalUser.AuthenticationState == AuthenticationState.ValidToken)
+            {
+                UserAccountManagement.UpdateUserProfile(onSuccess, onError);
+            }
+            else if (onSuccess != null)
+            {
+                onSuccess(LocalUser.Profile);
+            }
+        }
+
+        /// <summary>Fetches all mods associated with the authenticated user.</summary>
+        public static void FetchAuthenticatedUserMods(Action<List<ModProfile>> onSuccess,
+                                                      Action<WebRequestError> onError)
+        {
+            RequestFilter userModsFilter = new RequestFilter();
+            userModsFilter.AddFieldFilter(GetUserModFilterFields.gameId, new EqualToFilter<int>()
+            {
+                filterValue = PluginSettings.GAME_ID,
+            });
+
+            Action<List<ModProfile>> onGetMods = (modProfiles) =>
+            {
+                List<int> modIds = new List<int>(modProfiles.Count);
+                foreach (ModProfile profile in modProfiles)
+                {
+                    modIds.Add(profile.id);
+                }
+
+                if (onSuccess != null) { onSuccess(modProfiles); }
+            };
+
+            // - Get All Events -
+            ModManager.FetchAllResultsForQuery<ModProfile>((p, s, e) => APIClient.GetUserMods(userModsFilter, p, s, e),
+                                                           onGetMods,
+                                                           onError);
+        }
+
         /// <summary>Fetches and caches a User Avatar (if not already cached).</summary>
         public static void GetUserAvatar(UserProfile profile,
                                          UserAvatarSize size,
@@ -1260,8 +1409,12 @@ namespace ModIO
                 }
             });
         }
+        #endregion
 
-        // ---------[ EVENTS ]---------
+        #region Events
+        //-------------------------------------//
+        // -------------[ EVENTS ]-------------
+        //-------------------------------------//
         /// <summary>Fetches all mod events for the game.</summary>
         public static void FetchAllModEvents(int fromTimeStamp,
                                              int untilTimeStamp,
@@ -1497,8 +1650,12 @@ namespace ModIO
                 onSuccess.Invoke(eventList);
             }
         }
+        #endregion
 
-        // ---------[ UPLOADING ]---------
+        #region Uploading Mods
+        //-------------------------------------//
+        // ---------[ UPLOADING ]---------------
+        //-------------------------------------//
         /// <summary>Submits a new mod to the server.</summary>
         public static void SubmitNewMod(EditableModProfile newModProfile,
                                         Action<ModProfile> onSuccess,
@@ -1703,50 +1860,12 @@ namespace ModIO
 
             });
         }
-        // ---------[ USER DATA ]---------
-        /// <summary>Fetches and caches the User Profile for the values in UserAuthenticationData.</summary>
-        public static void GetAuthenticatedUserProfile(Action<UserProfile> onSuccess,
-                                                       Action<WebRequestError> onError)
-        {
-            if(LocalUser.Profile == null
-               && LocalUser.AuthenticationState == AuthenticationState.ValidToken)
-            {
-                UserAccountManagement.UpdateUserProfile(onSuccess, onError);
-            }
-            else if(onSuccess != null)
-            {
-                onSuccess(LocalUser.Profile);
-            }
-        }
+        #endregion
 
-        /// <summary>Fetches all mods associated with the authenticated user.</summary>
-        public static void FetchAuthenticatedUserMods(Action<List<ModProfile>> onSuccess,
-                                                      Action<WebRequestError> onError)
-        {
-            RequestFilter userModsFilter = new RequestFilter();
-            userModsFilter.AddFieldFilter(GetUserModFilterFields.gameId, new EqualToFilter<int>()
-            {
-                filterValue = PluginSettings.GAME_ID,
-            });
-
-            Action<List<ModProfile>> onGetMods = (modProfiles) =>
-            {
-                List<int> modIds = new List<int>(modProfiles.Count);
-                foreach(ModProfile profile in modProfiles)
-                {
-                    modIds.Add(profile.id);
-                }
-
-                if(onSuccess != null) { onSuccess(modProfiles); }
-            };
-
-            // - Get All Events -
-            ModManager.FetchAllResultsForQuery<ModProfile>((p,s,e) => APIClient.GetUserMods(userModsFilter, p, s, e),
-                                                           onGetMods,
-                                                           onError);
-        }
-
-        // ---------[ FETCH ALL RESULTS HELPER ]---------
+        #region Fetching Query Results
+        //-------------------------------------//
+        // -----[ FETCH ALL RESULTS HELPER ]-----
+        //-------------------------------------//
         /// <summary>Parameter definition for FetchAllResultsForQuery.</summary>
         private delegate void GetAllObjectsQuery<T>(APIPaginationParameters pagination,
                                                     Action<RequestPage<T>> onSuccess,
@@ -1811,6 +1930,7 @@ namespace ModIO
                       onError);
             }
         }
+        #endregion
 
         // ---------[ OBSOLETE ]---------
         #pragma warning disable 0067

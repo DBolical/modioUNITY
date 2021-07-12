@@ -235,8 +235,6 @@ namespace ModIO
 
         public static FileDownloadInfo StartModBinaryDownload(Modfile modfile, string targetFilePath)
         {
-            Debug.Assert(modfile.downloadLocator.dateExpires > ServerTimeStamp.Now);
-
             ModfileIdPair idPair = new ModfileIdPair()
             {
                 modId = modfile.modId,
